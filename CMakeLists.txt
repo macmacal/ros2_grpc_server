@@ -9,31 +9,58 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(Protobuf REQUIRED)
 
-option(USE_SYSTEM_GRPC "Use system installed gRPC" OFF)
+option(USE_SYSTEM_GRPC "Use system installed gRPC" ON)
 if(USE_SYSTEM_GRPC)
     # Find system-installed gRPC
-    find_package(gRPC CONFIG REQUIRED)
+    # find_package(gRPC CONFIOFFG REQUIRED)
+    find_program(GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin REQUIRED)
+    message(STATUS "Found grpc_cpp_plugin: ${GRPC_CPP_PLUGIN_EXECUTABLE}")
 else()
     # Build gRPC using FetchContent
-    include(FetchContent)
-    FetchContent_Declare(
-        gRPC
-        GIT_REPOSITORY https://github.com/grpc/grpc
-        GIT_TAG        v1.76.0
-    )
-    set(FETCHCONTENT_QUIET OFF)
-    FetchContent_MakeAvailable(gRPC)
+    # include(FetchContent)
+    # FetchContent_Declare(
+        # gRPC
+        # GIT_REPOSITORY https://github.com/grpc/grpc
+        # GIT_TAG        v1.76.0
+    # )
+    # set(FETCHCONTENT_QUIET OFF)
+    # FetchContent_MakeAvailable(gRPC)
 endif()
 
+find_package(gRPC CONFIG QUIET)
+
+if(NOT gRPC_FOUND)
+    message(STATUS "gRPC CONFIG not found, using manual library detection")
+    
+    # Find gRPC libraries manually
+    find_library(GRPC_LIBRARY NAMES grpc++ REQUIRED)
+    find_library(GRPC_UNSECURE_LIBRARY NAMES grpc REQUIRED)
+    
+    message(STATUS "Found gRPC library: ${GRPC_LIBRARY}")
+    message(STATUS "Found gRPC unsecure library: ${GRPC_UNSECURE_LIBRARY}")
+    
+    # Create imported target for gRPC::grpc++
+    if(NOT TARGET gRPC::grpc++)
+        add_library(gRPC::grpc++ UNKNOWN IMPORTED)
+        set_target_properties(gRPC::grpc++ PROPERTIES
+            IMPORTED_LOCATION "${GRPC_LIBRARY}"
+            INTERFACE_LINK_LIBRARIES "${GRPC_UNSECURE_LIBRARY}"
+        )
+    message(STATUS "Setup the gRPC::grpc++ library")
+    endif()
+else()
+    message(STATUS "Found gRPC via CONFIG")
+endif()
+
+find_package(Protobuf REQUIRED)
 # ------------------------------ Set Parameter ------------------------------
 # Set the directory where .proto files are located
 set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
 file(GLOB PROTO_SRC "${PROTO_SRC_DIR}/*.proto")
 
 # gRPC C++ plugin
-set(GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+# set(GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
 # Specify output directory for header, source, and script files
 set(GENERATED_PROTO_HDR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -115,13 +142,18 @@ target_sources(float32_server PRIVATE
     ${GENERATED_PROTO_HDR_DIR}/robot_service.grpc.pb.cc
     ${PROTO_SRCS}
 )
-target_link_libraries(float32_server gRPC::grpc++ protobuf::libprotobuf)
+target_link_libraries(float32_server 
+    # gRPC
+    gRPC::grpc++ 
+    protobuf::libprotobuf
+)
 
 # Linking required packages
 ament_target_dependencies(float32_server
     rclcpp
     std_msgs
-    gRPC
+    # gRPC
+    geometry_msgs
 )
 
 # Installation Settings
