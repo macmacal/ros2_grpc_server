@@ -1,12 +1,31 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 project(ros2_grpc_server)
+
+# C++17 is required by gRPC
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(Protobuf REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
+
+option(USE_SYSTEM_GRPC "Use system installed gRPC" OFF)
+if(USE_SYSTEM_GRPC)
+    # Find system-installed gRPC
+    find_package(gRPC CONFIG REQUIRED)
+else()
+    # Build gRPC using FetchContent
+    include(FetchContent)
+    FetchContent_Declare(
+        gRPC
+        GIT_REPOSITORY https://github.com/grpc/grpc
+        GIT_TAG        v1.76.0
+    )
+    set(FETCHCONTENT_QUIET OFF)
+    FetchContent_MakeAvailable(gRPC)
+endif()
 
 # ------------------------------ Set Parameter ------------------------------
 # Set the directory where .proto files are located
@@ -75,19 +94,19 @@ include_directories(
 # ----- Build C++ test Code ----- #
 option(BUILD_CPP_SOURCE "Build cpp source" ON)
 if(BUILD_CPP_SOURCE)
-add_executable(pose_server src/pose_server.cpp)
-target_sources(pose_server PRIVATE
-    ${GENERATED_PROTO_HDR_DIR}/pose_messages.grpc.pb.cc
-    ${GENERATED_PROTO_HDR_DIR}/pose_messages.pb.cc
-)
-target_link_libraries(pose_server gRPC::grpc++ protobuf::libprotobuf)
+    add_executable(pose_server src/pose_server.cpp)
+    target_sources(pose_server PRIVATE
+        ${GENERATED_PROTO_HDR_DIR}/pose_messages.grpc.pb.cc
+        ${GENERATED_PROTO_HDR_DIR}/pose_messages.pb.cc
+    )
+    target_link_libraries(pose_server gRPC::grpc++ protobuf::libprotobuf)
 
-add_executable(pose_client src/pose_client.cpp)
-target_sources(pose_client PRIVATE
-    ${GENERATED_PROTO_HDR_DIR}/pose_messages.grpc.pb.cc
-    ${GENERATED_PROTO_HDR_DIR}/pose_messages.pb.cc
-)
-target_link_libraries(pose_client gRPC::grpc++ protobuf::libprotobuf)
+    add_executable(pose_client src/pose_client.cpp)
+    target_sources(pose_client PRIVATE
+        ${GENERATED_PROTO_HDR_DIR}/pose_messages.grpc.pb.cc
+        ${GENERATED_PROTO_HDR_DIR}/pose_messages.pb.cc
+    )
+    target_link_libraries(pose_client gRPC::grpc++ protobuf::libprotobuf)
 endif()
 
 # ------------------------------ add ROS 2 executable ------------------------------
