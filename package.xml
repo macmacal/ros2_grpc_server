@@ -8,18 +8,14 @@
   <license>MIT License</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <!-- <build_depend>autoconfg</build_depend> -->
-  <!-- <build_depend>pkg-config</build_depend> -->
-  <!-- <build_depend>libtool</build_depend> -->
-
-  <!-- <depend>protobuf</depend> -->
-  <!-- <exec_depend>python-grpcio</exec_depend> -->
-
+  
   <depend>libgrpc</depend>
   <depend>protobuf-compiler-grpc</depend>
   <depend>protobuf-dev</depend>
+
   <exec_depend>python3-grpcio</exec_depend>
   <exec_depend>python3-grpc-tools</exec_depend>
+  <exec_depend>python3-protobuf</exec_depend>
   
 
   <test_depend>ament_lint_auto</test_depend>
