@@ -8,3 +8,7 @@ build/
 
 # Pycache
 **/__pycache__/**
+
+# Generated protobuf msgs
+include/msgs/
+script/msgs/
