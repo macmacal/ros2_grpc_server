@@ -24,8 +24,8 @@
 
 from flask import Flask, render_template, request, jsonify
 import grpc
-import robot_service_pb2
-import robot_service_pb2_grpc
+import msgs.robot_service_pb2 as robot_service_pb2
+import msgs.robot_service_pb2_grpc as robot_service_pb2_grpc
 
 app = Flask(__name__)
 
